@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -26,6 +27,39 @@ type CountryJSON struct {
 	Code        string `json:"alpha2Code"`
 	CountryName string `json:"name"`
 	CountryFlag string `json:"flag"`
+}
+
+//gbifJSON get the spices result
+type gbifJSON struct {
+	Results []SpeciesJSON `json:"results"`
+}
+
+/*
+Species represents extint species by country
+*/
+type Species struct {
+	Key       int    `json:"key"`
+	Kingdom   string `json:"kingdom"`
+	Phylum    string `json:"phylum"`
+	Order     string `json:"order"`
+	Family    string `json:"family"`
+	Species   string `json:"species"`
+	SciName   string `json:"scientificName"`
+	CanonName string `json:"canonicalName"`
+	IsExtinct bool   `json:"extinct"`
+}
+
+//SpeciesJSON represents a temporay struct to get data from GBIF
+type SpeciesJSON struct {
+	Key       int    `json:"speciesKey"`
+	Kingdom   string `json:"kingdom"`
+	Phylum    string `json:"phylum"`
+	Order     string `json:"order"`
+	Family    string `json:"family"`
+	Species   string `json:"species"`
+	SciName   string `json:"scientificName"`
+	CanonName string `json:"canonicalName"`
+	IsExtinct bool   `json:"extinct"`
 }
 
 /*
@@ -81,6 +115,38 @@ func countryHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "only get method allowed", http.StatusNotImplemented)
 	return
 }
+func speciesHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		http.Header.Add(w.Header(), "content-type", "application/json")
+		parts := strings.Split(r.URL.Path, "/")
+		if len(parts) != 5 {
+			http.Error(w, "Expecting format .../country_ios2", http.StatusBadRequest)
+			return
+		}
+		if parts[4] == "" {
+			//Get all
+		} else if _, err := strconv.Atoi(parts[4]); err == nil {
+			query := "http://api.gbif.org/v1/occurrence/search?speciesKey=" + parts[4]
+			fmt.Println(query)
+			resp, err := http.Get(query)
+			if err != nil {
+				//We fucked up
+			}
+			data, _ := ioutil.ReadAll(resp.Body)
+			var speciesJSON gbifJSON
+			json.Unmarshal(data, &speciesJSON)
+			json.NewEncoder(w).Encode(speciesJSON)
+
+		} else {
+			fmt.Print(parts[4])
+			http.Error(w, "Expecting format .../speices_key", http.StatusBadRequest)
+			return
+		}
+		return
+	}
+	http.Error(w, "only get method allowed", http.StatusNotImplemented)
+	return
+}
 func diagHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		http.Header.Add(w.Header(), "content-type", "application/json")
@@ -119,7 +185,7 @@ func main() {
 	}
 	http.HandleFunc("/", nilHandler)
 	http.HandleFunc("/conservation/v1/country/", countryHandler)
-	//http.HandleFunc("/conservation/v1/species/", helloHandler)
+	http.HandleFunc("/conservation/v1/species/", speciesHandler)
 	http.HandleFunc("/conservation/v1/diag/", diagHandler)
 
 	log.Fatal(http.ListenAndServe(":"+port, nil))
