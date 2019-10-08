@@ -228,7 +228,7 @@ func init(){
 	startTime = time.Now()
 }
 func main() {
-
+	fmt.Println("Caching API's ")
 	cachingSpecies();
 	fmt.Println("Starting application:")
 	port := os.Getenv("PORT")
