@@ -9,7 +9,15 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
+	"sync"
 )
+
+var startTime time.Time
+const VERSION string = "v1"
+const MAXCALL int = 5
+const GBIFOCCURANCESLIMIT int = 300
+const GBIFSPECIESLIMIT int = 1000;
 
 /*
 Country represents extint species by country
@@ -75,9 +83,11 @@ type Diag struct {
 	Gbif          int     `json:"gbif"`
 	Restcountries int     `json:"restcountries"`
 	Version       string  `json:"version"`
-	Uptime        float64 `json:"uptime"`
+	Uptime        string `json:"uptime"`
 }
-
+func uptime() time.Duration {
+    return time.Since(startTime)
+}
 func nilHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Default Handler: Invalid request received.")
 	http.Error(w, "Invalid request", http.StatusBadRequest)
@@ -169,15 +179,57 @@ func diagHandler(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("The HTTP request failed with error %s\n", err)
 			return
 		}
-		//TODO get correct uptime
-		diag := Diag{respneGbif.StatusCode, respneCon.StatusCode, "v1", 1.5}
+		
+		uptime := uptime()
+		uptimeString := fmt.Sprintf("%.0f seconds",uptime.Seconds()) 
+		diag := Diag{respneGbif.StatusCode, respneCon.StatusCode, VERSION, uptimeString}
 		json.NewEncoder(w).Encode(diag)
 		return
 	}
 	http.Error(w, "only get method allowed", http.StatusNotImplemented)
 	return
 }
+func cachingSpecies(){
+	//TODO CreateFile
+	f, err := os.Create("Species2.txt")
+	if err != nil {
+		fmt.Println("We fucked up")
+		//We fucked up
+	}
+	datachan := make(chan []byte)
+	//data[MAXCALL];
+	var wg sync.WaitGroup
+	for i := 0; i < MAXCALL; i++ {
+		wg.Add(1)
+		go func() {
+			limit := strconv.Itoa(GBIFSPECIESLIMIT)
+			offset := strconv.Itoa(GBIFSPECIESLIMIT*i)
+			query := "http://api.gbif.org/v1/species/search?limit=" + limit + "&offset=" + offset
+			resp, err := http.Get(query)
+			if err != nil {
+				//We fucked up
+			}
+			data, _ := ioutil.ReadAll(resp.Body)
+			datachan <- data
+		}() 
+		go func(){
+			getdata := <- datachan
+			f.Write(getdata)
+			fmt.Println("We have recived data")
+			wg.Done()
+		}()
+
+	} 
+	wg.Wait()
+	fmt.Println("We are done")
+	f.Close()
+}
+func init(){
+	startTime = time.Now()
+}
 func main() {
+
+	cachingSpecies();
 	fmt.Println("Starting application:")
 	port := os.Getenv("PORT")
 	if port == "" {
