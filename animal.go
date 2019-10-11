@@ -25,8 +25,14 @@ const MAXCALL int = 5
 //GBIFOCCURANCESLIMIT What the limit for Gbif occurances is
 const GBIFOCCURANCESLIMIT int = 300
 
+//GBIFOCCURANCESMAXOFFSET The max offset for occurances is max(200000, offset + limit)
+const GBIFOCCURANCESMAXOFFSET int = 200000 - GBIFOCCURANCESLIMIT
+
 //GBIFSPECIESLIMIT What the limit for Gbif Speces is
 const GBIFSPECIESLIMIT int = 1000
+
+//GBIFSPECIESMAXOFFSET The max offset allowed in Species
+const GBIFSPECIESMAXOFFSET int = 100000
 
 /*
 Country represents extint species by country
