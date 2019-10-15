@@ -52,6 +52,8 @@ func CachingSpecies() {
 			var gbifJSON GbifJSON
 			json.Unmarshal(data, &gbifJSON)
 			gbifJSON.index = i
+			//Loop through all gbifJSON to find the year? like what?
+			//data = ioutil.ReadAll(http.Get("http://api.gbif.org/v1/species/" + gbifJSON. + "/name").Body)
 			species <- gbifJSON
 		}(i)
 		go func() {
@@ -143,12 +145,15 @@ func CachingCounry(ios2 string, file *os.File) (country Country, exsist bool) {
 	sort.SliceStable(CSA.Results, func(i, j int) bool {
 		return CSA.Results[i].Key < CSA.Results[j].Key
 	})
-
+/*
 	for i := 1; i < len(CSA.Results); i++ {
 		if CSA.Results[i-1].Species == CSA.Results[i].Species {
 			CSA.Results = append(CSA.Results[:i], CSA.Results[i+1:]...)
 		}
 	}
+*/
+	countySpecies := unique(CSA);
+	CSA.Results = countySpecies;
 
 	country.Code = countryJSON.Code
 	country.CountryFlag = countryJSON.CountryFlag
@@ -221,4 +226,17 @@ func shouldFileCache(filename string, dir string) (Msg, *os.File) {
 	}
 	fmt.Println("Cache is recent, No need to update")
 	return Exist, file
+}
+func unique(country CountryGbifJSON) ([]CountySpecies) {
+    keys := make(map[CountySpecies]bool)
+	list := []CountySpecies{}
+
+	 for index := 0; index < len(country.Results); index++ {
+		 entry := country.Results[index]
+		if _, value := keys[entry]; !value {
+            keys[entry] = true
+			list = append(list, entry)
+        }
+	 }   
+    return list
 }

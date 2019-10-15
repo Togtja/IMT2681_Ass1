@@ -38,23 +38,28 @@ func CountryHandler(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 
-			fmt.Println(parts[4])
-			split := strings.Split(parts[4], "?")
-			fmt.Println(split)
-			if len(split[0]) != 2 {
-				fmt.Print(split[0])
+			limit, _ := strconv.ParseInt(r.FormValue("limit"), 10, 32)
+			if limit <= 0 {
+				//Default limit
+				limit = 300
+			}
+			offset, _ := strconv.ParseInt(r.FormValue("offset"), 10, 32)
+			fmt.Println("Limit:",limit)
+			fmt.Println("Offet:",offset)
+			if len(parts[4]) != 2 {
+				fmt.Print(parts[4])
 				http.Error(w, "Expecting country ios2 code", http.StatusBadRequest)
 				return
 			}
 			//See if we have cahced data from before
-			should, file := shouldFileCache(strings.ToUpper(split[0])+FilenameS, CountyFileFolder)
+			should, file := shouldFileCache(strings.ToUpper(parts[4])+FilenameS, CountyFileFolder)
 			var finalResult Country
 			if should == Error || should == DirFail {
 				http.Error(w, "Could not find or create file", http.StatusInternalServerError)
 				return
 			} else if should == Created || should == OldRenew {
 				var found bool
-				finalResult, found = CachingCounry(split[0], file)
+				finalResult, found = CachingCounry(parts[4], file)
 				if !found {
 					http.Error(w, "could not find country ios2 code", http.StatusBadRequest)
 				}
@@ -66,6 +71,12 @@ func CountryHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				json.Unmarshal(data, &finalResult)
 				file.Close()
+			}
+
+			if limit+offset < int64(len(finalResult.SpeciesKey)){
+				finalResult.SpeciesKey = finalResult.SpeciesKey[offset:limit+offset];
+				finalResult.Species = finalResult.Species[offset:limit+offset]
+				//Else will show everything
 			}
 			json.NewEncoder(w).Encode(finalResult)
 
@@ -133,9 +144,21 @@ func SpeciesHandler(w http.ResponseWriter, r *http.Request) {
 			//Sort the data by key
 			for index := 0; index < len(species.Results); index++ {
 				if species.Results[index].Key == key {
+					//Example thing that's wierd
+					//Key 1007 exist in species/1007/name
+					//However in the species/search?limit=10&offset=750
+					query := "http://api.gbif.org/v1/species/" + strconv.Itoa(key) + "/name"
+					resp, err := http.Get(query)
+					if err != nil {
+						fmt.Println(err)
+						return
+					}
+					data, _ := ioutil.ReadAll(resp.Body)
+					var year SpeciesYear;
+					json.Unmarshal(data, &year)
+					species.Results[index].Year = year.Year;
 					json.NewEncoder(w).Encode(species.Results[index])
 					return
-
 				}
 			}
 			http.Error(w, "could not find the species key", http.StatusBadRequest)

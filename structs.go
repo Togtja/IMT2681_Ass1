@@ -28,7 +28,7 @@ type CountryGbifJSON struct {
 CountySpecies represents species by country
 */
 type CountySpecies struct {
-	Key     int    `json:"key"`
+	Key     int    `json:"speciesKey"`
 	Species string `json:"species"`
 }
 
@@ -48,7 +48,13 @@ type SpeciesJSON struct {
 	Species   string `json:"species"`
 	SciName   string `json:"scientificName"`
 	CanonName string `json:"canonicalName"`
+	Year 	  string `json:"year"`
 }
+//SpeciesYear is to grap the year and add it to SpeicesJSON's year
+type SpeciesYear struct {
+	Year 	  string `json: "year"`
+}
+
 
 /*
 Diag represent the diagnostic tool to see API status code for
