@@ -5,8 +5,9 @@ import "time"
 //Version The current api version
 const Version string = "v1"
 
-//MaxCall How may calls we are going to make to the API
-const MaxCall int = 2
+//MaxCall How may calls we are going to make to the GBIF API on startup
+//This number is called when you look for countries Speices
+const MaxCall int = 500
 
 //GBIFOccurancesLimit What the limit for Gbif occurances is
 const GBIFOccurancesLimit int = 300

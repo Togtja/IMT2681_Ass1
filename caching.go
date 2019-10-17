@@ -52,8 +52,6 @@ func CachingSpecies() {
 			var gbifJSON GbifJSON
 			json.Unmarshal(data, &gbifJSON)
 			gbifJSON.index = i
-			//Loop through all gbifJSON to find the year? like what?
-			//data = ioutil.ReadAll(http.Get("http://api.gbif.org/v1/species/" + gbifJSON. + "/name").Body)
 			species <- gbifJSON
 		}(i)
 		go func() {
@@ -104,7 +102,7 @@ func CachingCounry(ios2 string, file *os.File) (country Country, exsist bool) {
 		fmt.Println("Query fucked")
 		return country, false
 	}
-	//CounrtSpeciesArray
+	//CounrtySpeciesArray
 	var CSA CountryGbifJSON
 	data, _ = ioutil.ReadAll(resp.Body)
 	json.Unmarshal(data, &CSA)

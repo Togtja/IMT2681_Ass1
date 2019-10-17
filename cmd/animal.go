@@ -11,13 +11,10 @@ import (
 /*
 Question?
 What do do with empty Species Key from Occurances?
-Use Key instead of species key?
 
 What do do with Species without names or key?
 http://api.gbif.org/v1/occurrence/search?country=se&limit=300&offset=0 (184)
 
-
-How to get ? from URLPath
 */
 func main() {
 	fmt.Println("Caching API's ")
